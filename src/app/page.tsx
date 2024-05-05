@@ -7,7 +7,7 @@ const Home = () => {
       <h1>Welcome to the Home Page</h1>
       {/* Use Link to navigate to the video page */}
       <Link href="/video">
-        <button type="button">Go to Video Page</button>
+        <button type="button">Watch Video</button>
       </Link>
     </div>
   );
