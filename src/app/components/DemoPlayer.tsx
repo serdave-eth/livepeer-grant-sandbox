@@ -2,10 +2,16 @@ import * as Player from "@livepeer/react/player";
 import { Src } from "@livepeer/core/media";
 import { PauseIcon, PlayIcon } from "@livepeer/react/assets";
 
-// pass the parsed playback info Src[] into the player
-export const DemoPlayer = ({ src }: { src: Src[] | null }) => {
+type DemoPlayerProps = {
+  src: Src[] | null;
+  jwt?: string | null;
+};
+
+export const DemoPlayer = ({ src, jwt }: DemoPlayerProps) => {
+  console.log("THIS IS THE JWT IN THE PLAYER: ", jwt);
+  console.log("THIS IS THE PLAYBACK ID: ", src);
   return (
-    <Player.Root src={src}>
+    <Player.Root src={src} jwt={jwt}>
       <Player.Container>
         <Player.Video />
 
