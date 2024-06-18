@@ -8,8 +8,6 @@ type DemoPlayerProps = {
 };
 
 export const DemoPlayer = ({ src, jwt }: DemoPlayerProps) => {
-  console.log("THIS IS THE JWT IN THE PLAYER: ", jwt);
-  console.log("THIS IS THE PLAYBACK ID: ", src);
   return (
     <Player.Root src={src} jwt={jwt}>
       <Player.Container>

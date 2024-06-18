@@ -9,9 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lit-protocol/auth-helpers": "^6.0.2",
+    "@lit-protocol/lit-node-client": "^6.0.2",
+    "@lit-protocol/types": "^6.0.2",
     "@livepeer/react": "^4.1.16",
     "@tanstack/react-query": "^5.35.1",
+    "@wagmi/core": "^2.9.1",
     "connectkit": "^1.7.3",
+    "ethers": "^5.7.2",
+    "lit-js-sdk": "^1.1.250",
     "livepeer": "^3.0.2",
     "next": "14.0.4",
     "react": "^18",

@@ -17,7 +17,7 @@ if (!alchemyId) {
   throw new Error("NEXT_PUBLIC_ALCHEMY_ID is not set.");
 }
 
-const config = createConfig(
+export const config = createConfig(
   getDefaultConfig({
     chains: [mainnet],
     transports: {
