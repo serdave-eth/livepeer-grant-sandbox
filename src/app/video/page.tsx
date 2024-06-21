@@ -38,8 +38,9 @@ async function getPlaybackInfo(playbackId: string) {
 
 // Asynchronous server component fetching playback data
 export default async function VideoPage() {
-  const playbackId = "f8cc11s27p43vg5q";
+  const playbackId = "cc53eb8slq3hrhoi";
   const src = await getPlaybackInfo(playbackId);
+  console.log("SOURCE: ", src);
 
   // Fetch JWT token during server-side rendering
   const jwtToken = await fetchSignedToken(playbackId, 'supersecretkey');
@@ -50,7 +51,7 @@ export default async function VideoPage() {
 
   return (
     <div>
-      <DemoPlayer src={src} jwt={jwtToken} />
+      <DemoPlayer src={src}/>
     </div>
   );
 }
