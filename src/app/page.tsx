@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { LitNetwork } from "@lit-protocol/constants";
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
 import { LitNodeClient, encryptString, decryptToString } from "@lit-protocol/lit-node-client";
@@ -11,7 +11,9 @@ import { getSrc } from "@livepeer/react/external";
 import { Livepeer } from "livepeer";
 import { DemoPlayer } from "@/app/components/DemoPlayer";
 import { Src } from '@livepeer/react';
-
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { LoginButton } from './components/LoginButton';
+import { LogoutButton } from './components/LogoutButton';
 
 interface AuthCallbackParams {
   resourceAbilityRequests?: any[];  // Define more specific type if possible
@@ -34,21 +36,21 @@ const source_string = "Livepeer Grant P1";
 //Playback ID of token gated video. Only works if you have signed JWT from API end point
 const playbackId = "cc53eb8slq3hrhoi";
 
-/*const accessControlConditions = [
+const accessControlConditions = [
   {
-    contractAddress: '0xBbbed53F08eF748b0FD9D52D9c301A55b9123334',
-    standardContractType: 'ERC721',
-    chain: "base",
-    method: 'balanceOf',
+    contractAddress: '',
+    standardContractType: '',
+    chain: chain,
+    method: '',
     parameters: [
-      ':userAddress'
+      ':userAddress',
     ],
     returnValueTest: {
-      comparator: '>',
-      value: '0'
+      comparator: '=',
+      value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
     }
   }
-]*/
+]
 
 // Function to fetch playback info
 async function getPlaybackInfo(playbackId: string) {
@@ -72,26 +74,26 @@ async function getLitNodeClient() {
 }
 
 const genAuthSig = async (
-  signer: ethers.providers.JsonRpcSigner,
+  wallet: ethers.Signer,
   client: LitNodeClient,
   uri: string,
   resources: any[]
 ) => {
 
-  const walletAddress = await signer.getAddress();
   let blockHash = await client.getLatestBlockhash();
+  const address = await wallet.getAddress();
   const message = await createSiweMessageWithRecaps({
-      walletAddress: walletAddress,
+      walletAddress: address,
       nonce: blockHash,
       litNodeClient: client,
       resources,
       expiration: ONE_WEEK_FROM_NOW,
       uri
   })
-  // Generate the authSig
   const authSig = await generateAuthSig({
-    signer: signer,
-    toSign: message,
+      signer: wallet,
+      toSign: message,
+      address: address
   });
 
 
@@ -99,11 +101,11 @@ const genAuthSig = async (
 }
 
 const genSession = async (
-  signer: ethers.providers.JsonRpcSigner,
+  wallet: ethers.Signer,
   client: LitNodeClient,
   resources: any[]) => {
   let sessionSigs = await client.getSessionSigs({
-      chain: chain,
+      chain: "base",
       resourceAbilityRequests: resources,
       authNeededCallback: async (params: AuthCallbackParams) => {
         console.log("resourceAbilityRequests:", params.resources);
@@ -122,7 +124,7 @@ const genSession = async (
 
         // generate the authSig for the inner signature of the session
         // we need capabilities to assure that only one api key may be decrypted
-        const authSig = genAuthSig(signer, client, params.uri, params.resourceAbilityRequests ?? []);
+        const authSig = genAuthSig(wallet, client, params.uri, params.resourceAbilityRequests ?? []);
         return authSig;
       }
   });
@@ -136,7 +138,13 @@ const Home = () => {
   const [signedJWT, setSignedJWT] = useState('');  // State to hold the signed JWT
   const [walletConnected, setWalletConnected] = useState(false); // Check wallet connection
   const [ethersSigner, setEthersSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
-  
+
+  const { ready, authenticated, login } = usePrivy();
+  const disableLogin = !ready || (ready && authenticated);
+  const { wallets } = useWallets();
+  const userWallet = wallets[0];
+  console.log("WALLET OBJECT: ", userWallet);
+
   useEffect(() => {
     // Call disconnectWeb3 when the component mounts
     disconnectWeb3();
@@ -178,26 +186,9 @@ const Home = () => {
 
 
   const handleCheckAccess = async () => {
-    if (walletConnected) {
         try {
             //Connect Lit Node Client
             let litNodeClient = await getLitNodeClient();
-            
-            const accessControlConditions = [
-              {
-                contractAddress: '',
-                standardContractType: '',
-                chain: chain,
-                method: '',
-                parameters: [
-                  ':userAddress',
-                ],
-                returnValueTest: {
-                  comparator: '=',
-                  value: '0xfF3b1ac7ac4BBb1c56f7d3D0b81E366227E6f137'
-                }
-              }
-            ]
             
             //Encrypt the source string using access control condition that a wallet holds a specific ERC721 NFT
             const { ciphertext, dataToEncryptHash } = await encryptString(
@@ -211,9 +202,15 @@ const Home = () => {
           console.log("cipher text:", ciphertext, "hash:", dataToEncryptHash);
           const accsResourceString = 
             await LitAccessControlConditionResource.generateResourceString(accessControlConditions as any, dataToEncryptHash);
+          const userSigner = await userWallet.getEthereumProvider();
+          // Wrap the EIP-1193 provider with ethers
+          const provider = new ethers.providers.Web3Provider(userSigner);
+
+          // Get the signer from the ethers provider
+          const signer = provider.getSigner();
           let sessionForDecryption;  
-          if(ethersSigner) {
-            sessionForDecryption = await genSession(ethersSigner, litNodeClient, [
+          if(userSigner) {
+            sessionForDecryption = await genSession(signer, litNodeClient, [
               { 
                   resource: new LitAccessControlConditionResource(accsResourceString),
                   ability: LitAbility.AccessControlConditionDecryption,
@@ -239,27 +236,20 @@ const Home = () => {
           });
           const data = await response.json();
           setSignedJWT(data.token);
-          console.log("JWT updated to:", data.token); // Ensure the token is being logged correctly here
+          console.log("JWT updated to:", data.token); // Ensure the token is being logged correctly here*/
         } catch (error) {
             console.error('Failed to check access:', error);
         }
-    }
 };
-
 
 return (
   <div>
       <h1>Welcome to Digital DVD</h1>
-      {!walletConnected && (
-          <button type="button" onClick={connectWallet}>
-              Connect Wallet
-          </button>
-      )}
-      {walletConnected && (
-          <button type="button" onClick={handleCheckAccess}>
-              Check Access
-          </button>
-      )}
+      <LoginButton/>
+      <LogoutButton/>
+      <button type="button" onClick={handleCheckAccess}>
+                Check Access
+      </button>
       {showVideoButton && videoSrc && signedJWT && (
         <DemoPlayer src={videoSrc} jwt={signedJWT} />
       )}

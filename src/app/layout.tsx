@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { WagmiProviderWrapper } from "./components/WagmiWrapper";
+import { PrivyWrapper } from "./components/PrivyWrapper"; // Import the PrivyWrapper
 import "../styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-          {children}
+        <PrivyWrapper>
+          {children} {/* All children will now be inside PrivyWrapper */}
+        </PrivyWrapper>
       </body>
     </html>
   );

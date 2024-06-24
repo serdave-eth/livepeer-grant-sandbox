@@ -57,7 +57,7 @@ const accessControlConditions = [
     ],
     returnValueTest: {
       comparator: '=',
-      value: '0xfF3b1ac7ac4BBb1c56f7d3D0b81E366227E6f137'
+      value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
     }
   }
 ]

@@ -13,6 +13,7 @@
     "@lit-protocol/lit-node-client": "^6.0.2",
     "@lit-protocol/types": "^6.0.2",
     "@livepeer/react": "^4.1.16",
+    "@privy-io/react-auth": "^1.72.0",
     "@tanstack/react-query": "^5.35.1",
     "@wagmi/core": "^2.9.1",
     "connectkit": "^1.7.3",
