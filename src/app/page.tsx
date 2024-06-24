@@ -1,11 +1,9 @@
 "use client"
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LitNetwork } from "@lit-protocol/constants";
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
-import { LitNodeClient, encryptString, decryptToString } from "@lit-protocol/lit-node-client";
+import { LitNodeClient, encryptString} from "@lit-protocol/lit-node-client";
 import { LitAbility, LitAccessControlConditionResource, LitActionResource, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
-import { LitContracts } from "@lit-protocol/contracts-sdk";
-import { mainnet } from "wagmi/chains";
 import { ethers, Signer } from 'ethers';  // Import Signer correctly
 import { getSrc } from "@livepeer/react/external";
 import { Livepeer } from "livepeer";
@@ -136,14 +134,10 @@ const Home = () => {
   const [showVideoButton, setShowVideoButton] = useState(false);
   const [videoSrc, setVideoSrc] = useState<Src[] | null>(null); // State to store video source
   const [signedJWT, setSignedJWT] = useState('');  // State to hold the signed JWT
-  const [walletConnected, setWalletConnected] = useState(false); // Check wallet connection
-  const [ethersSigner, setEthersSigner] = useState<ethers.providers.JsonRpcSigner | null>(null);
 
   const { ready, authenticated, login } = usePrivy();
-  const disableLogin = !ready || (ready && authenticated);
   const { wallets } = useWallets();
   const userWallet = wallets[0];
-  console.log("WALLET OBJECT: ", userWallet);
 
   useEffect(() => {
     // Call disconnectWeb3 when the component mounts
@@ -163,27 +157,6 @@ const Home = () => {
       console.log("Waiting on JWT or Video Source:", { jwt: signedJWT, src: videoSrc });
     }
   }, [signedJWT, videoSrc]);
-  
-  
-  
-  const connectWallet = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-        try {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            await provider.send("eth_requestAccounts", []);
-            const ethersSigner = provider.getSigner();
-            console.log("Connected account:", await ethersSigner.getAddress());
-            setEthersSigner(ethersSigner);  // Save the signer in state
-            setWalletConnected(true);
-        } catch (error) {
-            console.error("Failed to connect wallet:", error);
-        }
-    } else {
-        console.error("MetaMask is not installed!");
-        alert("Please install MetaMask to connect your wallet.");
-    }
-};
-
 
   const handleCheckAccess = async () => {
         try {
