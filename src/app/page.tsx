@@ -1,17 +1,16 @@
 "use client"
 import { useEffect, useState } from 'react';
-import { LitNetwork } from "@lit-protocol/constants";
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
-import { LitNodeClient, encryptString} from "@lit-protocol/lit-node-client";
+import { encryptString} from "@lit-protocol/lit-node-client";
 import { LitAbility, LitAccessControlConditionResource, LitActionResource, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
 import { ethers, Signer } from 'ethers';  // Import Signer correctly
-import { getSrc } from "@livepeer/react/external";
-import { Livepeer } from "livepeer";
 import { DemoPlayer } from "@/app/components/DemoPlayer";
 import { Src } from '@livepeer/react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { LoginButton } from './components/LoginButton';
 import { LogoutButton } from './components/LogoutButton';
+import { getLitNodeClient, genSession } from './utils/litUtils';
+import { getPlaybackInfo } from './utils/livepeerUtils';
 
 interface AuthCallbackParams {
   resourceAbilityRequests?: any[];  // Define more specific type if possible
@@ -25,6 +24,8 @@ const ONE_WEEK_FROM_NOW = new Date(
 ).toISOString();
 
 const chain = "ethereum";
+
+const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
 
 //Source string is encrypted using access control condition that you hold a specific ERC721 NFT
 //then on server side is decrypted using same access control condition, and cross-checked with
@@ -50,86 +51,6 @@ const accessControlConditions = [
   }
 ]
 
-// Function to fetch playback info
-async function getPlaybackInfo(playbackId: string) {
-  const api_key = process.env.LIVEPEER_SECRET_API_KEY;
-  const livepeer = new Livepeer({apiKey: api_key});
-  const playbackInfo = await livepeer.playback.get(playbackId);
-  return getSrc(playbackInfo.playbackInfo);
-}
-
-async function getLitNodeClient() {
-  const litNodeClient = new LitNodeClient({
-    litNetwork: LitNetwork.Cayenne,
-    debug: true
-  });
-
-  console.log("Connecting litNodeClient to network...");
-  await litNodeClient.connect();
-
-  console.log("litNodeClient connected!");
-  return litNodeClient;
-}
-
-const genAuthSig = async (
-  wallet: ethers.Signer,
-  client: LitNodeClient,
-  uri: string,
-  resources: any[]
-) => {
-
-  let blockHash = await client.getLatestBlockhash();
-  const address = await wallet.getAddress();
-  const message = await createSiweMessageWithRecaps({
-      walletAddress: address,
-      nonce: blockHash,
-      litNodeClient: client,
-      resources,
-      expiration: ONE_WEEK_FROM_NOW,
-      uri
-  })
-  const authSig = await generateAuthSig({
-      signer: wallet,
-      toSign: message,
-      address: address
-  });
-
-
-  return authSig;
-}
-
-const genSession = async (
-  wallet: ethers.Signer,
-  client: LitNodeClient,
-  resources: any[]) => {
-  let sessionSigs = await client.getSessionSigs({
-      chain: "base",
-      resourceAbilityRequests: resources,
-      authNeededCallback: async (params: AuthCallbackParams) => {
-        console.log("resourceAbilityRequests:", params.resources);
-
-        if (!params.expiration) {
-          throw new Error("expiration is required");
-        }
-
-        if (!params.resources) {
-          throw new Error("resourceAbilityRequests is required");
-        }
-
-        if (!params.uri) {
-          throw new Error("uri is required");
-        }
-
-        // generate the authSig for the inner signature of the session
-        // we need capabilities to assure that only one api key may be decrypted
-        const authSig = genAuthSig(wallet, client, params.uri, params.resourceAbilityRequests ?? []);
-        return authSig;
-      }
-  });
-
-  return sessionSigs;
-}
-
 const Home = () => {
   const [showVideoButton, setShowVideoButton] = useState(false);
   const [videoSrc, setVideoSrc] = useState<Src[] | null>(null); // State to store video source
@@ -147,7 +68,7 @@ const Home = () => {
 
   useEffect(() => {
     if (signedJWT && !videoSrc) {
-      getPlaybackInfo(playbackId).then(playbackResponse => {
+      getPlaybackInfo(playbackId, livepeerApiKey).then(playbackResponse => {
         setVideoSrc(playbackResponse);
         if (playbackResponse) {
           setShowVideoButton(true); 
