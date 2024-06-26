@@ -26,7 +26,7 @@ interface signAccessJwt {
   custom?: any;
 }
 
-const chain = "ethereum";
+const chain = "base";
 
 // Private key for wallet to connect to Lit and decrypt message
 const ethPrivateKey = process.env.ETH_PRIVATE_KEY as string;
@@ -46,7 +46,7 @@ const ONE_WEEK_FROM_NOW = new Date(
 const accessControlPrivateKey = process.env.LIVEPEER_JWT_PRIVATE_KEY as string;
 const accessControlPublicKey = process.env.LIVEPEER_JWT_PUBLIC_KEY as string;
 
-const accessControlConditions = [
+/*const accessControlConditions = [
   {
     contractAddress: '',
     standardContractType: '',
@@ -60,7 +60,39 @@ const accessControlConditions = [
       value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
     }
   }
+]*/
+
+const accessControlConditions = [
+  {
+    contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
+    standardContractType: 'ERC721',
+    chain: chain,
+    method: 'balanceOf',
+    parameters: [
+      ':userAddress'
+    ],
+    returnValueTest: {
+      comparator: '>',
+      value: '0'
+    }
+  }
 ]
+
+/*const accessControlConditions = [
+  {
+    contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
+    standardContractType: 'ERC721',
+    chain,
+    method: 'balanceOf',
+    parameters: [
+      ':userAddress'
+    ],
+    returnValueTest: {
+      comparator: '>',
+      value: '0'
+    }
+  }
+]*/
 
 // API handler for decrypting and verifying ciphertext
 const handler = async (

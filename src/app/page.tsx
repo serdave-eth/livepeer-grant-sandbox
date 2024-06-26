@@ -1,9 +1,12 @@
 "use client"
 import { useEffect, useState } from 'react';
+import { LitNetwork } from "@lit-protocol/constants";
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
-import { encryptString} from "@lit-protocol/lit-node-client";
+import { LitNodeClient, encryptString} from "@lit-protocol/lit-node-client";
 import { LitAbility, LitAccessControlConditionResource, LitActionResource, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
 import { ethers, Signer } from 'ethers';  // Import Signer correctly
+import { getSrc } from "@livepeer/react/external";
+import { Livepeer } from "livepeer";
 import { DemoPlayer } from "@/app/components/DemoPlayer";
 import { Src } from '@livepeer/react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
@@ -23,7 +26,7 @@ const ONE_WEEK_FROM_NOW = new Date(
   Date.now() + 1000 * 60 * 60 * 24 * 7
 ).toISOString();
 
-const chain = "ethereum";
+const chain = "base";
 
 const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
 
@@ -35,7 +38,7 @@ const source_string = "Livepeer Grant P1";
 //Playback ID of token gated video. Only works if you have signed JWT from API end point
 const playbackId = "cc53eb8slq3hrhoi";
 
-const accessControlConditions = [
+/*const accessControlConditions = [
   {
     contractAddress: '',
     standardContractType: '',
@@ -49,7 +52,31 @@ const accessControlConditions = [
       value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
     }
   }
+]*/
+
+const accessControlConditions = [
+  {
+    contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
+    standardContractType: 'ERC721',
+    chain: chain,
+    method: 'balanceOf',
+    parameters: [
+      ':userAddress'
+    ],
+    returnValueTest: {
+      comparator: '>',
+      value: '0'
+    }
+  }
 ]
+
+// Function to fetch playback info
+/*async function getPlaybackInfo(playbackId: string) {
+  const api_key = process.env.LIVEPEER_SECRET_API_KEY;
+  const livepeer = new Livepeer({apiKey: api_key});
+  const playbackInfo = await livepeer.playback.get(playbackId);
+  return getSrc(playbackInfo.playbackInfo);
+}*/
 
 const Home = () => {
   const [showVideoButton, setShowVideoButton] = useState(false);
