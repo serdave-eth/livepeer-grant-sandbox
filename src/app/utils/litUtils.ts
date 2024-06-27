@@ -27,6 +27,7 @@ export const getLitNodeClient = async () => {
 export const genAuthSig = async (wallet: ethers.Signer, client: LitNodeClient, uri: string, resources: any[]) => {
   let blockHash = await client.getLatestBlockhash();
   const address = await wallet.getAddress();
+  
   const message = await createSiweMessageWithRecaps({
       walletAddress: address,
       nonce: blockHash,
@@ -42,7 +43,7 @@ export const genAuthSig = async (wallet: ethers.Signer, client: LitNodeClient, u
   });
 };
 
-export const genSession = async (wallet: ethers.Signer, client: LitNodeClient, resources: any[]) => {
+export const genSession = async (wallet: ethers.Signer, client: LitNodeClient, resources: any[], uri: string) => {
     return client.getSessionSigs({
         chain: "base",
         resourceAbilityRequests: resources,
@@ -53,7 +54,7 @@ export const genSession = async (wallet: ethers.Signer, client: LitNodeClient, r
   
           // Ensure resources is always an array, even if it's empty
           const safeResources = params.resourceAbilityRequests || []; // Default to empty array if undefined
-          return genAuthSig(wallet, client, params.uri, safeResources);
+          return genAuthSig(wallet, client, uri, safeResources);
         }
     });
   };

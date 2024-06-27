@@ -117,6 +117,7 @@ const Home = () => {
           );
 
           console.log("cipher text:", ciphertext, "hash:", dataToEncryptHash);
+          const uri = "https://livepeer-grant-sandbox.vercel.app/"; // Explicitly set the URI here
           const accsResourceString = 
             await LitAccessControlConditionResource.generateResourceString(accessControlConditions as any, dataToEncryptHash);
           const userSigner = await userWallet.getEthereumProvider();
@@ -129,12 +130,10 @@ const Home = () => {
           if(userSigner) {
             sessionForDecryption = await genSession(signer, litNodeClient, [
               { 
-                  resource: new LitAccessControlConditionResource(accsResourceString),
-                  ability: LitAbility.AccessControlConditionDecryption,
-    
+                resource: new LitAccessControlConditionResource(accsResourceString),
+                ability: LitAbility.AccessControlConditionDecryption,
               }
-            ]
-          );
+            ], uri); // Pass the URI here
           console.log("session sigs: ", sessionForDecryption);
           }
 
