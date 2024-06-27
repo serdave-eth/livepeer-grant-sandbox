@@ -67,6 +67,7 @@ const Home = () => {
   const [videoSrc, setVideoSrc] = useState<Src[] | null>(null); // State to store video source
   const [signedJWT, setSignedJWT] = useState('');  // State to hold the signed JWT
   const [loading, setLoading] = useState(false);  // State to handle loading
+  const [errorMessage, setErrorMessage] = useState('');
 
   const { ready, authenticated, login } = usePrivy();
   const { wallets } = useWallets();
@@ -90,6 +91,15 @@ const Home = () => {
       console.log("Waiting on JWT or Video Source:", { jwt: signedJWT, src: videoSrc });
     }
   }, [signedJWT, videoSrc]);
+
+  useEffect(() => {
+    // Reset state when user logs out
+    if (!authenticated) {
+      setShowVideoButton(false);
+      setSignedJWT('');
+      setVideoSrc(null);
+    }
+  }, [authenticated]);
 
   const handleCheckAccess = async () => {
         try {
@@ -144,12 +154,28 @@ const Home = () => {
           const data = await response.json();
           setSignedJWT(data.token);
           console.log("JWT updated to:", data.token); // Ensure the token is being logged correctly here*/
+          if (data.token) {
+            setSignedJWT(data.token);
+            setErrorMessage('');
+          }
         } catch (error) {
-            console.error('Failed to check access:', error);
+          console.error('Failed to check access:', error);
+          setErrorMessage('ERROR: Access Denied');
         }
         finally {
           setLoading(false);  // Stop loading regardless of the outcome
         }
+        const handleLogout = async () => {
+          try {
+            // Add your code to disconnect from Lit Node Client here if needed
+            console.log('Disconnecting from Lit Node Client...');
+            // Reset JWT
+            setSignedJWT('');
+            console.log('Logged out successfully.');
+          } catch (error) {
+            console.error('Failed to log out:', error);
+          }
+        };
 };
 
 return (
@@ -176,7 +202,10 @@ return (
             {loading ? 'Checking...' : 'Check Access'}
           </button>
         </div>
-        {showVideoButton && videoSrc && signedJWT && (
+        {errorMessage && (
+          <div style={{ color: 'red', marginTop: '20px' }}>{errorMessage}</div>
+        )}
+        {showVideoButton && videoSrc && signedJWT && authenticated && (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <DemoPlayer src={videoSrc} jwt={signedJWT} />
           </div>
