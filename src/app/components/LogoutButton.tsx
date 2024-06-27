@@ -6,7 +6,7 @@ export const LogoutButton = () => {
   const disableLogout = !ready || (ready && !authenticated);
 
   return (
-    <button disabled={disableLogout} onClick={logout}>
+    <button className="button" disabled={disableLogout} onClick={logout}>
       Log out
     </button>
   );

@@ -46,22 +46,6 @@ const ONE_WEEK_FROM_NOW = new Date(
 const accessControlPrivateKey = process.env.LIVEPEER_JWT_PRIVATE_KEY as string;
 const accessControlPublicKey = process.env.LIVEPEER_JWT_PUBLIC_KEY as string;
 
-/*const accessControlConditions = [
-  {
-    contractAddress: '',
-    standardContractType: '',
-    chain: chain,
-    method: '',
-    parameters: [
-      ':userAddress',
-    ],
-    returnValueTest: {
-      comparator: '=',
-      value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
-    }
-  }
-]*/
-
 const accessControlConditions = [
   {
     contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
@@ -77,22 +61,6 @@ const accessControlConditions = [
     }
   }
 ]
-
-/*const accessControlConditions = [
-  {
-    contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
-    standardContractType: 'ERC721',
-    chain,
-    method: 'balanceOf',
-    parameters: [
-      ':userAddress'
-    ],
-    returnValueTest: {
-      comparator: '>',
-      value: '0'
-    }
-  }
-]*/
 
 // API handler for decrypting and verifying ciphertext
 const handler = async (

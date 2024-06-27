@@ -38,22 +38,6 @@ const source_string = "Livepeer Grant P1";
 //Playback ID of token gated video. Only works if you have signed JWT from API end point
 const playbackId = "cc53eb8slq3hrhoi";
 
-/*const accessControlConditions = [
-  {
-    contractAddress: '',
-    standardContractType: '',
-    chain: chain,
-    method: '',
-    parameters: [
-      ':userAddress',
-    ],
-    returnValueTest: {
-      comparator: '=',
-      value: '0x6058b9bDC6F223eba8B1D148ba319dcAe83eB4e9'
-    }
-  }
-]*/
-
 const accessControlConditions = [
   {
     contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
@@ -82,6 +66,7 @@ const Home = () => {
   const [showVideoButton, setShowVideoButton] = useState(false);
   const [videoSrc, setVideoSrc] = useState<Src[] | null>(null); // State to store video source
   const [signedJWT, setSignedJWT] = useState('');  // State to hold the signed JWT
+  const [loading, setLoading] = useState(false);  // State to handle loading
 
   const { ready, authenticated, login } = usePrivy();
   const { wallets } = useWallets();
@@ -108,6 +93,7 @@ const Home = () => {
 
   const handleCheckAccess = async () => {
         try {
+            setLoading(true);  // Start loading
             //Connect Lit Node Client
             let litNodeClient = await getLitNodeClient();
             
@@ -161,19 +147,41 @@ const Home = () => {
         } catch (error) {
             console.error('Failed to check access:', error);
         }
+        finally {
+          setLoading(false);  // Stop loading regardless of the outcome
+        }
 };
 
 return (
   <div>
-      <h1>Welcome to Digital DVD</h1>
-      <LoginButton/>
-      <LogoutButton/>
-      <button type="button" onClick={handleCheckAccess}>
-                Check Access
-      </button>
-      {showVideoButton && videoSrc && signedJWT && (
-        <DemoPlayer src={videoSrc} jwt={signedJWT} />
-      )}
+      <h1 style={{ textAlign: 'center', fontSize: '36px', marginTop: '20px', fontWeight: 'bold' }}>
+        Welcome to Digital DVD
+      </h1>
+      <div style={{ maxWidth: '600px', margin: 'auto', textAlign: 'center' }}>
+        <div style={{ marginTop: '20px' }}>
+          <strong>Step 1: Mint Access NFT</strong><br />
+          Go <a href="URL_FOR_MINTING" target="_blank" rel="noopener noreferrer" style={{ color: '#0000EE' }}>here</a> to mint the NFT needed to watch the video.
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <strong>Step 2: Connect Wallet</strong>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '10px' }}>
+            <LoginButton/>
+            <LogoutButton/>
+          </div>
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <strong>Step 3: Check Access</strong>
+          <p>Press the button below. You will be asked to sign a message with your wallet, after which we will check if you have permission to view the video. If you do, the video player will appear below.</p>
+          <button type="button" onClick={handleCheckAccess} style={{ display: 'block', margin: '20px auto', background: 'grey', border: 'none', borderRadius: '8px', padding: '10px 20px', color: 'white', cursor: 'pointer' }}>
+            {loading ? 'Checking...' : 'Check Access'}
+          </button>
+        </div>
+        {showVideoButton && videoSrc && signedJWT && (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <DemoPlayer src={videoSrc} jwt={signedJWT} />
+          </div>
+        )}
+      </div>
   </div>
 );
 
