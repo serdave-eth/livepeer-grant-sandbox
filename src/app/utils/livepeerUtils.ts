@@ -15,7 +15,7 @@ export const getPlaybackInfo = async (playbackId: string, apiKey: string): Promi
     const playbackInfo = await livepeer.playback.get(playbackId);
     return getSrc(playbackInfo.playbackInfo);
   } catch (error) {
-    console.error("Failed to fetch playback info:", error);
+    console.error("Failed to fetch playback info: ", error);
     return null;
   }
 };
