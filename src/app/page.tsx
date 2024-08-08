@@ -14,6 +14,7 @@ import { LoginButton } from './components/LoginButton';
 import { LogoutButton } from './components/LogoutButton';
 import { getLitNodeClient, genSession } from './utils/litUtils';
 import { getPlaybackInfo } from './utils/livepeerUtils';
+import * as siwe from 'siwe';
 
 interface AuthCallbackParams {
   resourceAbilityRequests?: any[];  // Define more specific type if possible
@@ -27,32 +28,28 @@ const ONE_WEEK_FROM_NOW = new Date(
 ).toISOString();
 
 const chain = "base";
-
+const key = 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZ1lqc2MxMVJ0cU05WUxZZzcKWnpxS1dXdzNvZ3pZRFZFTWJqVVVvdzZxSEhXaFJBTkNBQVNyQTlqSWZUNkVuQW9JT0tOTjdmb1Q1SmNhRHQ1dQp6UFdhZFRnUlBrSmk2R3VxWUpoRElCakFsckdFOE4rb21Yc0g5c1BINCtteDNSTnNjNWRkWng0cgotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg==';
+const litActionIpfsId = 'QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4';
+const ciphertext = 's/XIL+d7AMGCLngpzu/y/mmKox2xfOgoNKWfSyfLHTqrP2wUx9z1kiBqeCsYLQUuj6JFQZXeL7orZOwn2joiyisIZ+DYIjZc1czK/8xrl8vGAnpE34O4q0193aBC1yCMXRnHxbcpAnEnT0IxOn/Hx5jvh8sBy6QoCpP0H2SNVOUY3fpraQwO+Z8/L4jR89fzDbqSPwHXpkaPnadBSuiV140rndQEQYyEJRzUfkDPeC/heZUjuY0V+9kZcYoZiW1GD9FCAHA4eCzN5N+udh/B0srcInmBypO0PfnVX+WEHgoDUz2sMrytTQQaGCZKYVr9PTbjksVK7MJ1oQx6nyq+/p2EozBODoA7MUaZpXyRhY9CsgTQlmDXahnlUEidfNKTzkNGaYX9CxIpZWB6wtvu2HU7MPT4WlLTCAnAvW0pWgz/1D4OG1XEdyv9GbPKU51Ty6AmHL9DaKkb/KSlnXb0ZUExMxVfGzF7/tlnU3acjD7mhZX2VcnV8B5SkYG6HDysYrYL9GSvvFL7r5P+i+LnmUb0Ew/PgfvBAg==';
+const dataToEncryptHash = 'e3d31f0824b9b959a28f374d993279a4a182917fd335374a718611e790239f4b';
 const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
-
-//Source string is encrypted using access control condition that you hold a specific ERC721 NFT
-//then on server side is decrypted using same access control condition, and cross-checked with
-//original source string
-const source_string = "Livepeer Grant P1";
 
 //Playback ID of token gated video. Only works if you have signed JWT from API end point
 const playbackId = "cc53eb8slq3hrhoi";
 
 const accessControlConditions = [
   {
-    contractAddress: '0x13dfaF990cE5176e01dcaDc932EB71756072DB27',
-    standardContractType: 'ERC721',
+    contractAddress: '',
+    standardContractType: '',
     chain: chain,
-    method: 'balanceOf',
-    parameters: [
-      ':userAddress'
-    ],
+    method: '',
+    parameters: [':currentActionIpfsId'],
     returnValueTest: {
-      comparator: '>',
-      value: '0'
-    }
-  }
-]
+      comparator: '=',
+      value: litActionIpfsId,
+    },
+  },
+];
 
 // Function to fetch playback info
 /*async function getPlaybackInfo(playbackId: string) {
@@ -106,20 +103,9 @@ const Home = () => {
             setLoading(true);  // Start loading
             //Connect Lit Node Client
             let litNodeClient = await getLitNodeClient();
-            
-            //Encrypt the source string using access control condition that a wallet holds a specific ERC721 NFT
-            const { ciphertext, dataToEncryptHash } = await encryptString(
-              {
-                  accessControlConditions,
-                  dataToEncrypt: source_string,
-              },
-              litNodeClient
-          );
-
-          console.log("cipher text:", ciphertext, "hash:", dataToEncryptHash);
           //const uri = "https://livepeer-grant-sandbox.vercel.app/"; // Explicitly set the URI here
           const accsResourceString = 
-            await LitAccessControlConditionResource.generateResourceString(accessControlConditions as any, dataToEncryptHash);
+        await LitAccessControlConditionResource.generateResourceString(accessControlConditions as any, dataToEncryptHash);
           const userSigner = await userWallet.getEthereumProvider();
           // Wrap the EIP-1193 provider with ethers
           const provider = new ethers.providers.Web3Provider(userSigner);
@@ -129,41 +115,76 @@ const Home = () => {
           let sessionForDecryption;  
           if(userSigner) {
             sessionForDecryption = await genSession(signer, litNodeClient, [
-              { 
-                resource: new LitAccessControlConditionResource(accsResourceString),
-                ability: LitAbility.AccessControlConditionDecryption,
+              {
+                  resource: new LitActionResource('*'),
+                  ability: LitAbility.LitActionExecution,
+              },
+              {
+                  resource: new LitAccessControlConditionResource(accsResourceString),
+                  ability: LitAbility.AccessControlConditionDecryption,
+      
               }
-            ]); // Pass the URI here
+          ]
+          );
           console.log("session sigs: ", sessionForDecryption);
           }
 
-          // Send encrypted string to server. If decrypted string is same as source string, server signs JWT
-          const response = await fetch('/api/sign-jwt', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                  ciphertext: ciphertext, // You might need to adjust based on your API needs
-                  dataToEncryptHash: dataToEncryptHash,
-                  sessionSigs: sessionForDecryption,
-                  videoPlayBack: playbackId
-              })
-          });
-          const data = await response.json();
-          setSignedJWT(data.token);
-          console.log("JWT updated to:", data.token); // Ensure the token is being logged correctly here*/
-          if (data.token) {
-            setSignedJWT(data.token);
-            setErrorMessage('');
+          const expirationTime = new Date(
+            Date.now() + 1000 * 60 * 60 * 24 * 7
+          ).toISOString();
+            let nonce = await litNodeClient.getLatestBlockhash();
+            const domain = 'localhost';
+            const origin = 'https://localhost';
+            const statement = 'Sign this message to authenticate you are the owner of this wallet';
+        
+            const siweMessage = new siwe.SiweMessage({
+                domain,
+                address: userWallet.address,
+                statement,
+                uri: origin,
+                version: '1',
+                chainId: 8453,
+                nonce,
+                expirationTime,
+              });
+              const messageToSign = siweMessage.prepareMessage();
+        
+              // Sign the message and format the authSig
+            const signature = await signer.signMessage(messageToSign);
+        
+            const authSig = {
+                sig: signature,
+                derivedVia: 'web3.eth.personal.sign',
+                signedMessage: messageToSign,
+                address: userWallet.address,
+              };
+              console.log(authSig);
+            const res = await litNodeClient.executeJs({
+                sessionSigs: sessionForDecryption,
+                //code: genActionSource(),
+                ipfsId: litActionIpfsId,
+                jsParams: {
+                    accessControlConditions,
+                    ciphertext,
+                    dataToEncryptHash,
+                    authSig: authSig,
+                    chain
+                }
+              });
+              console.log("result from action execution: ", res);
+          // Check if res.response is a non-empty string
+          if (typeof res.response === 'string' && res.response.trim() !== '') {
+              setSignedJWT(res.response);  // Update the JWT
+              setErrorMessage('');  // Clear any error messages
+          } else {
+              setErrorMessage('ERROR: Access Denied');  // Handle the empty string case
+            }
+          } catch (error) {
+              console.error('Failed to check access:', error);
+              setErrorMessage('ERROR: Access Denied');  // Handle the error case
+          } finally {
+              setLoading(false);  // Stop loading regardless of the outcome
           }
-        } catch (error) {
-          console.error('Failed to check access:', error);
-          setErrorMessage('ERROR: Access Denied');
-        }
-        finally {
-          setLoading(false);  // Stop loading regardless of the outcome
-        }
         const handleLogout = async () => {
           try {
             // Add your code to disconnect from Lit Node Client here if needed
