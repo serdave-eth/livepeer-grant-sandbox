@@ -1,34 +1,18 @@
 "use client"
 import { useEffect, useState } from 'react';
-import { LitNetwork } from "@lit-protocol/constants";
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
-import { LitNodeClient, encryptString} from "@lit-protocol/lit-node-client";
-import { LitAbility, LitAccessControlConditionResource, LitActionResource, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
-import { ethers, Signer } from 'ethers';  // Import Signer correctly
-import { getSrc } from "@livepeer/react/external";
-import { Livepeer } from "livepeer";
+import { LitAbility, LitAccessControlConditionResource, LitActionResource} from "@lit-protocol/auth-helpers";
+import { ethers } from 'ethers';  // Import Signer correctly
 import { DemoPlayer } from "@/app/components/DemoPlayer";
 import { Src } from '@livepeer/react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { LoginButton } from './components/LoginButton';
 import { LogoutButton } from './components/LogoutButton';
-import { getLitNodeClient, genSession } from './utils/litUtils';
+import { getLitNodeClient, genSession, genAuthSig } from './utils/litUtils';
 import { getPlaybackInfo } from './utils/livepeerUtils';
 import * as siwe from 'siwe';
 
-interface AuthCallbackParams {
-  resourceAbilityRequests?: any[];  // Define more specific type if possible
-  expiration?: string;
-  uri?: string;
-  resources?: any;
-}
-
-const ONE_WEEK_FROM_NOW = new Date(
-  Date.now() + 1000 * 60 * 60 * 24 * 7
-).toISOString();
-
 const chain = "base";
-const key = 'LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZ1lqc2MxMVJ0cU05WUxZZzcKWnpxS1dXdzNvZ3pZRFZFTWJqVVVvdzZxSEhXaFJBTkNBQVNyQTlqSWZUNkVuQW9JT0tOTjdmb1Q1SmNhRHQ1dQp6UFdhZFRnUlBrSmk2R3VxWUpoRElCakFsckdFOE4rb21Yc0g5c1BINCtteDNSTnNjNWRkWng0cgotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg==';
 const litActionIpfsId = 'QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4';
 const ciphertext = 's/XIL+d7AMGCLngpzu/y/mmKox2xfOgoNKWfSyfLHTqrP2wUx9z1kiBqeCsYLQUuj6JFQZXeL7orZOwn2joiyisIZ+DYIjZc1czK/8xrl8vGAnpE34O4q0193aBC1yCMXRnHxbcpAnEnT0IxOn/Hx5jvh8sBy6QoCpP0H2SNVOUY3fpraQwO+Z8/L4jR89fzDbqSPwHXpkaPnadBSuiV140rndQEQYyEJRzUfkDPeC/heZUjuY0V+9kZcYoZiW1GD9FCAHA4eCzN5N+udh/B0srcInmBypO0PfnVX+WEHgoDUz2sMrytTQQaGCZKYVr9PTbjksVK7MJ1oQx6nyq+/p2EozBODoA7MUaZpXyRhY9CsgTQlmDXahnlUEidfNKTzkNGaYX9CxIpZWB6wtvu2HU7MPT4WlLTCAnAvW0pWgz/1D4OG1XEdyv9GbPKU51Ty6AmHL9DaKkb/KSlnXb0ZUExMxVfGzF7/tlnU3acjD7mhZX2VcnV8B5SkYG6HDysYrYL9GSvvFL7r5P+i+LnmUb0Ew/PgfvBAg==';
 const dataToEncryptHash = 'e3d31f0824b9b959a28f374d993279a4a182917fd335374a718611e790239f4b';
@@ -51,14 +35,6 @@ const accessControlConditions = [
   },
 ];
 
-// Function to fetch playback info
-/*async function getPlaybackInfo(playbackId: string) {
-  const api_key = process.env.LIVEPEER_SECRET_API_KEY;
-  const livepeer = new Livepeer({apiKey: api_key});
-  const playbackInfo = await livepeer.playback.get(playbackId);
-  return getSrc(playbackInfo.playbackInfo);
-}*/
-
 const Home = () => {
   const [showVideoButton, setShowVideoButton] = useState(false);
   const [videoSrc, setVideoSrc] = useState<Src[] | null>(null); // State to store video source
@@ -66,7 +42,7 @@ const Home = () => {
   const [loading, setLoading] = useState(false);  // State to handle loading
   const [errorMessage, setErrorMessage] = useState('');
 
-  const { ready, authenticated, login } = usePrivy();
+  const { authenticated} = usePrivy();
   const { wallets } = useWallets();
   const userWallet = wallets[0];
 
@@ -113,52 +89,25 @@ const Home = () => {
           // Get the signer from the ethers provider
           const signer = provider.getSigner();
           let sessionForDecryption;  
+          const resources = [
+            {
+                resource: new LitActionResource('*'),
+                ability: LitAbility.LitActionExecution,
+            },
+            {
+                resource: new LitAccessControlConditionResource(accsResourceString),
+                ability: LitAbility.AccessControlConditionDecryption,
+    
+            }
+        ];
           if(userSigner) {
-            sessionForDecryption = await genSession(signer, litNodeClient, [
-              {
-                  resource: new LitActionResource('*'),
-                  ability: LitAbility.LitActionExecution,
-              },
-              {
-                  resource: new LitAccessControlConditionResource(accsResourceString),
-                  ability: LitAbility.AccessControlConditionDecryption,
-      
-              }
-          ]
-          );
+            sessionForDecryption = await genSession(signer, litNodeClient, resources);
           console.log("session sigs: ", sessionForDecryption);
           }
 
-          const expirationTime = new Date(
-            Date.now() + 1000 * 60 * 60 * 24 * 7
-          ).toISOString();
-            let nonce = await litNodeClient.getLatestBlockhash();
-            const domain = 'localhost';
-            const origin = 'https://localhost';
-            const statement = 'Sign this message to authenticate you are the owner of this wallet';
-        
-            const siweMessage = new siwe.SiweMessage({
-                domain,
-                address: userWallet.address,
-                statement,
-                uri: origin,
-                version: '1',
-                chainId: 8453,
-                nonce,
-                expirationTime,
-              });
-              const messageToSign = siweMessage.prepareMessage();
-        
-              // Sign the message and format the authSig
-            const signature = await signer.signMessage(messageToSign);
-        
-            const authSig = {
-                sig: signature,
-                derivedVia: 'web3.eth.personal.sign',
-                signedMessage: messageToSign,
-                address: userWallet.address,
-              };
-              console.log(authSig);
+            // Use genAuthSig function
+            const authSig = await genAuthSig(signer, litNodeClient, origin, resources);
+            console.log(authSig);
             const res = await litNodeClient.executeJs({
                 sessionSigs: sessionForDecryption,
                 //code: genActionSource(),
@@ -185,17 +134,6 @@ const Home = () => {
           } finally {
               setLoading(false);  // Stop loading regardless of the outcome
           }
-        const handleLogout = async () => {
-          try {
-            // Add your code to disconnect from Lit Node Client here if needed
-            console.log('Disconnecting from Lit Node Client...');
-            // Reset JWT
-            setSignedJWT('');
-            console.log('Logged out successfully.');
-          } catch (error) {
-            console.error('Failed to log out:', error);
-          }
-        };
 };
 
 return (

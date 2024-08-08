@@ -1,8 +1,8 @@
 // src/app/utils/litUtils.ts
 import { ethers } from 'ethers';
-import { LitNodeClient, encryptString} from "@lit-protocol/lit-node-client";
+import { LitNodeClient} from "@lit-protocol/lit-node-client";
 import { LitNetwork } from "@lit-protocol/constants";
-import { LitAbility, LitAccessControlConditionResource, LitActionResource, createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
+import { createSiweMessageWithRecaps, generateAuthSig } from "@lit-protocol/auth-helpers";
 
 const ONE_WEEK_FROM_NOW = new Date(
     Date.now() + 1000 * 60 * 60 * 24 * 7
