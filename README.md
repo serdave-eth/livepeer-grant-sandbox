@@ -2,7 +2,7 @@
 
 This project demonstrates a video hosted on Livepeer that is token gated using Lit Protocol.
 
-The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decrypt and combine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares). The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
+The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decrypt and combine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares){:target="_blank"}. The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
 
 When the user calls the lit action, it does the following:
 
