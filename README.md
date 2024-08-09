@@ -2,17 +2,15 @@
 
 This project demonstrates a video hosted on Livepeer that is token gated using Lit Protocol.
 
-The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decryptandcombine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares). The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
+The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decrypt and combine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares). The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
 
 When the user calls the lit action, it does the following:
 
--Check if the user is allowed to sign a JWT. This is done using a hardcoded access control condition. For this project, we check if the user holds a specific ERC721 NFT. 
--If the user is authorized, decrypt the private key and sign a JWT
--Return signed JWT to the user
+1. Check if the user is allowed to sign a JWT. This is done using a hardcoded access control condition. For this project, we check if the user holds a specific ERC721 NFT. 
+2. If the user is authorized, decrypt the private key and sign a JWT
+3. Return signed JWT to the user
 
-Because the decryption of the private key happens within the lit action, the user can't steal the key and distribute it to unauthorized users. 
-
-The entire application runs client side.  
+Because the decryption of the private key happens within the lit action, the user can't steal the key and distribute it to unauthorized users. This allows the entire application runs client side.  
 
 ### Step 1: Generate public and private key for for JWT access control
 
@@ -45,21 +43,26 @@ This defines who is authorized to get a signed JWT (and therefore watch the vide
 
 ### Step 4: Encrypt private key
 
-You can use [this script] (https://github.com/serdave-eth/lit-encrypt). Before running it, read the instructions.
+You can use [this script](https://github.com/serdave-eth/lit-encrypt). Before running it, read the instructions.
 
 ### Step 5: Play video
 
 There are a few variables at the top of page.tsx that you need to update for your application:
 
 chain: which chain your NFT is on.
+
 ciphertext and dataToEncryptHash: outputs from step 4.
+
 livepeerApiKey: your livepeer API key
+
 playbackId: the playbackId of the video you want to view
 
 ### Steps to run this project
 
 npm install
+
 npm run build
+
 npm start
 
 Go to http://localhost:3000/. 
