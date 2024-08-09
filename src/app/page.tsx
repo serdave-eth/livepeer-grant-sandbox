@@ -14,6 +14,16 @@ import { getPlaybackInfo } from './utils/livepeerUtils';
 //Inputs for calling Lit Action
 const chain = "base";
 const litActionIpfsId = 'QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4';
+
+//Encrypted private key for signing JWT. Can only be decrypted by Lit Action
+const ciphertext = 's/XIL+d7AMGCLngpzu/y/mmKox2xfOgoNKWfSyfLHTqrP2wUx9z1kiBqeCsYLQUuj6JFQZXeL7orZOwn2joiyisIZ+DYIjZc1czK/8xrl8vGAnpE34O4q0193aBC1yCMXRnHxbcpAnEnT0IxOn/Hx5jvh8sBy6QoCpP0H2SNVOUY3fpraQwO+Z8/L4jR89fzDbqSPwHXpkaPnadBSuiV140rndQEQYyEJRzUfkDPeC/heZUjuY0V+9kZcYoZiW1GD9FCAHA4eCzN5N+udh/B0srcInmBypO0PfnVX+WEHgoDUz2sMrytTQQaGCZKYVr9PTbjksVK7MJ1oQx6nyq+/p2EozBODoA7MUaZpXyRhY9CsgTQlmDXahnlUEidfNKTzkNGaYX9CxIpZWB6wtvu2HU7MPT4WlLTCAnAvW0pWgz/1D4OG1XEdyv9GbPKU51Ty6AmHL9DaKkb/KSlnXb0ZUExMxVfGzF7/tlnU3acjD7mhZX2VcnV8B5SkYG6HDysYrYL9GSvvFL7r5P+i+LnmUb0Ew/PgfvBAg==';
+const dataToEncryptHash = 'e3d31f0824b9b959a28f374d993279a4a182917fd335374a718611e790239f4b';
+
+//Video player input. Can use an Livepeer API Key. 
+const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
+const playbackId = "cc53eb8slq3hrhoi";
+
+
 const accessControlConditions = [
   {
     contractAddress: '',
@@ -27,15 +37,6 @@ const accessControlConditions = [
     },
   },
 ];
-
-//Encrypted private key for signing JWT. Can only be decrypted by Lit Action
-const ciphertext = 's/XIL+d7AMGCLngpzu/y/mmKox2xfOgoNKWfSyfLHTqrP2wUx9z1kiBqeCsYLQUuj6JFQZXeL7orZOwn2joiyisIZ+DYIjZc1czK/8xrl8vGAnpE34O4q0193aBC1yCMXRnHxbcpAnEnT0IxOn/Hx5jvh8sBy6QoCpP0H2SNVOUY3fpraQwO+Z8/L4jR89fzDbqSPwHXpkaPnadBSuiV140rndQEQYyEJRzUfkDPeC/heZUjuY0V+9kZcYoZiW1GD9FCAHA4eCzN5N+udh/B0srcInmBypO0PfnVX+WEHgoDUz2sMrytTQQaGCZKYVr9PTbjksVK7MJ1oQx6nyq+/p2EozBODoA7MUaZpXyRhY9CsgTQlmDXahnlUEidfNKTzkNGaYX9CxIpZWB6wtvu2HU7MPT4WlLTCAnAvW0pWgz/1D4OG1XEdyv9GbPKU51Ty6AmHL9DaKkb/KSlnXb0ZUExMxVfGzF7/tlnU3acjD7mhZX2VcnV8B5SkYG6HDysYrYL9GSvvFL7r5P+i+LnmUb0Ew/PgfvBAg==';
-const dataToEncryptHash = 'e3d31f0824b9b959a28f374d993279a4a182917fd335374a718611e790239f4b';
-
-//Video player input
-const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
-const playbackId = "cc53eb8slq3hrhoi";
-
 
 const Home = () => {
   //States for managing a basic UX
@@ -81,7 +82,7 @@ const Home = () => {
     }
   }, [authenticated]);
 
-  //Creates necessary authsig and session sig, then call the Lit Action to retrieve signed JWT
+  //Creates authsig and session sig, then calls the Lit Action to retrieve signed JWT
   const handleCheckAccess = async () => {
     try {
       setLoading(true);  // Start loading
