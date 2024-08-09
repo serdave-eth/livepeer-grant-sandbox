@@ -72,6 +72,8 @@ playbackId: the playbackId of the video you want to view
 
 ### Steps to run this project
 
+Follow these steps:
+
 ```
 npm install
 
