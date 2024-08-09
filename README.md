@@ -72,10 +72,12 @@ playbackId: the playbackId of the video you want to view
 
 ### Steps to run this project
 
-```npm install
+```
+npm install
 
 npm run build
 
-npm start```
+npm start
+```
 
 Go to http://localhost:3000/. 
