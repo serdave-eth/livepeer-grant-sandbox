@@ -1,23 +1,23 @@
 "use client"
 import { useEffect, useState } from 'react';
 import { disconnectWeb3 } from "@lit-protocol/auth-browser";
-import { LitAbility, LitAccessControlConditionResource, LitActionResource} from "@lit-protocol/auth-helpers";
 import { ethers } from 'ethers';  // Import Signer correctly
 import { DemoPlayer } from "@/app/components/DemoPlayer";
 import { Src } from '@livepeer/react';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { LoginButton } from './components/LoginButton';
 import { LogoutButton } from './components/LogoutButton';
-import { getLitNodeClient, genSession, genAuthSig } from './utils/litUtils';
 import { getPlaybackInfo } from './utils/livepeerUtils';
+import { init } from "./utils/litUtils";
+import { getLitAuthData } from "./utils/litUtils";
 
 //Inputs for calling Lit Action
 const chain = "base";
-const litActionIpfsId = 'QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4';
+const litActionIpfsId = 'QmabWSro8aL7rWYobXMANA5ppz9htoWFrhbCHUhAZEfDUv';
 
 //Encrypted private key for signing JWT. Can only be decrypted by Lit Action
-const ciphertext = 's/XIL+d7AMGCLngpzu/y/mmKox2xfOgoNKWfSyfLHTqrP2wUx9z1kiBqeCsYLQUuj6JFQZXeL7orZOwn2joiyisIZ+DYIjZc1czK/8xrl8vGAnpE34O4q0193aBC1yCMXRnHxbcpAnEnT0IxOn/Hx5jvh8sBy6QoCpP0H2SNVOUY3fpraQwO+Z8/L4jR89fzDbqSPwHXpkaPnadBSuiV140rndQEQYyEJRzUfkDPeC/heZUjuY0V+9kZcYoZiW1GD9FCAHA4eCzN5N+udh/B0srcInmBypO0PfnVX+WEHgoDUz2sMrytTQQaGCZKYVr9PTbjksVK7MJ1oQx6nyq+/p2EozBODoA7MUaZpXyRhY9CsgTQlmDXahnlUEidfNKTzkNGaYX9CxIpZWB6wtvu2HU7MPT4WlLTCAnAvW0pWgz/1D4OG1XEdyv9GbPKU51Ty6AmHL9DaKkb/KSlnXb0ZUExMxVfGzF7/tlnU3acjD7mhZX2VcnV8B5SkYG6HDysYrYL9GSvvFL7r5P+i+LnmUb0Ew/PgfvBAg==';
-const dataToEncryptHash = 'e3d31f0824b9b959a28f374d993279a4a182917fd335374a718611e790239f4b';
+const ciphertext = 'sMQ/hgleWvrtuwpl6XgQoLmwnVSeylilJwAeLg7iRaYRQt0GIyWVH+9pGx5ZNn+j+A9+tBte+aVrnNnKJRurZPK1rFHkD4YIYoWtphXlsRfGAgex+VtILJecVJnbRAoaNgPha5vwklYtSp+t3JB1zEKuSfU5iUaicTmflOBMCDlRflSOhuqnVxDE09gfiT+5qr5ifKEEehOgGEvYoPf73QllbQY+1lV3ab1BgwvtwZfPAXjeva562iQ5rTpPNZZknlr8NJAq7lvbvn9yciljEVESo98AX5vJMr3AbX+gsMzw/XLjd29hd53P/mY/xEkcSfdnXoF+B+Y8zR/mJqgE4ZGRbpvzk10VsnaDVv9z7jKxf2Ob1sk3+vrfQ3hkmxShM1NYseQLQqpFbbDRQEvXXrwxmg0e0y/vW/uek16WA/FY8lYHxJeFrJwX0A00vUfqQKtCBcBbWfQP22IofgfYYCxn++lSCRQoBrV9h4rF37djTLtmI+sypaBk8EKy7Zm/yjWo9YNDCCtA3ziYCyYFzUb9yYGpmLCBAg==';
+const dataToEncryptHash = 'd845034369ebeff68b40c8cb9eeb7898ef0e3af14533c3699b5b56f52d40f023';
 
 //Video player input. Can use an Livepeer API Key. 
 const livepeerApiKey = process.env.LIVEPEER_SECRET_API_KEY ?? "";
@@ -85,71 +85,76 @@ const Home = () => {
   //Creates authsig and session sig, then calls the Lit Action to retrieve signed JWT
   const handleCheckAccess = async () => {
     try {
-      setLoading(true);  // Start loading
+      setLoading(true);
 
-      //Connect Lit Node Client
-      let litNodeClient = await getLitNodeClient();
-     
-      // Wrap the EIP-1193 provider with ethers and get the signer from the ethers provider
+      // Get the user's wallet signer
       const userSigner = await userWallet.getEthereumProvider();
       const provider = new ethers.providers.Web3Provider(userSigner);
       const signer = provider.getSigner();
+      const address = await signer.getAddress();
 
-      // Set up parameters for Session Signature
-      let sessionForDecryption;  
-      const accsResourceString = 
-        await LitAccessControlConditionResource.generateResourceString(accessControlConditions as any, dataToEncryptHash);
-      const resources = [
+
+      // Initialize Keypo
+      const keypo = await init(address);
+
+      // Get Lit auth data for the file (replace "livepeer-jwt" with your file key if needed)
+      const { sessionSigs, authSig, litNodeClient } = await getLitAuthData("livepeer-jwt", keypo, signer as any);
+
+      // Get file info from Keypo
+      const file = keypo.files["livepeer-jwt"];
+      const dataToEncryptHash = file.fileIdentifier;
+
+      // Fetch file JSON from IPFS
+      const ipfsPacket = await fetch(`https://gateway.pinata.cloud/ipfs/${file.cid}`);
+      const fileJson = await ipfsPacket.json();
+      const ciphertext = fileJson.ciphertext;
+      const litActionIpfsId = fileJson.userField.litActionCid;
+      const chain = "ethereum";
+
+      // Build access control conditions
+      const accessControlConditions = [
         {
-          resource: new LitActionResource('*'),
-          ability: LitAbility.LitActionExecution,
+          contractAddress: "",
+          standardContractType: "",
+          chain,
+          method: "",
+          parameters: [":currentActionIpfsId"],
+          returnValueTest: {
+            comparator: "=",
+            value: litActionIpfsId,
+          },
         },
-        {
-            resource: new LitAccessControlConditionResource(accsResourceString),
-            ability: LitAbility.AccessControlConditionDecryption,
-    
-        }
       ];
-      
-      // Generate session sig
-      if(userSigner) {
-        sessionForDecryption = await genSession(signer, litNodeClient, resources);
-        console.log("session sigs: ", sessionForDecryption);
-      }
 
-      // Generate a seperate auth sig, which is used in the lit action for checking NFT ownership
-      const authSig = await genAuthSig(signer, litNodeClient, origin, resources);
-      console.log(authSig);
-
-      // Execute the Lit Action. 
-      // First checks the authsig to verify you're the owner of the NFT
-      // Second decrypts the private key and signs a JWT (passed as res.response)
+      // Call Lit Action via LitNodeClient
       const res = await litNodeClient.executeJs({
-        sessionSigs: sessionForDecryption,
+        sessionSigs,
         ipfsId: litActionIpfsId,
         jsParams: {
           accessControlConditions,
           ciphertext,
           dataToEncryptHash,
-          authSig: authSig,
-          chain
-        }
+          authSig,
+          chain,
+        },
       });
-      console.log("result from action execution: ", res);
-      // Check if res.response is a non-empty string
-      if (typeof res.response === 'string' && res.response.trim() !== '') {
-        setSignedJWT(res.response);  // Update the JWT
-        setErrorMessage('');  // Clear any error messages
+
+      // The signed JWT is in res.response
+      let jwtObj;
+      if (typeof res.response === "string") {
+        jwtObj = JSON.parse(res.response);
       } else {
-        setErrorMessage('ERROR: Access Denied');  // Handle the empty string case
+        jwtObj = res.response;
       }
-      } catch (error) {
-        console.error('Failed to check access:', error);
-              setErrorMessage('ERROR: Access Denied');  // Handle the error case
-          } finally {
-              setLoading(false);  // Stop loading regardless of the outcome
-          }
-    };
+      setSignedJWT(jwtObj.Response);
+      setErrorMessage("");
+    } catch (error) {
+      console.error("Failed to check access:", error);
+      setErrorMessage("ERROR: Access Denied");
+    } finally {
+      setLoading(false);
+    }
+  };
 
     return (
     <div>
