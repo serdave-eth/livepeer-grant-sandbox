@@ -3,7 +3,7 @@
 This project demonstrates a video hosted on Livepeer that is token gated using Lit Protocol.
 
 
-The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decrypt and combine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares). The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
+The token gate uses a signed JWT for access control. The private key used to sign it is encrypted by Lit Protocol. The key can only be decrypted within a Lit Action with the help of Lit's new [decrypt and combine function](https://developer.litprotocol.com/sdk/serverless-signing/combining-decryption-shares). The lit action is stored on IPFS here: https://ipfs.io/ipfs/QmZwGeBFzva5yTcsRqRhjyh8xUxnZAjKAaxDv5eHokhqyW. 
 
 
 When the user calls the lit action, it does the following:
@@ -27,7 +27,7 @@ You can use [this script](https://github.com/serdave-eth/livepeer-upload-video) 
 
 ### Step 3: Create Lit Action for signing JWT
 
-The lit action for this project can be found here: https://ipfs.io/ipfs/QmWA1StRHhyLVredACLN7vra35Dyv4jUSQ5rzsVhovLcf4. 
+The lit action for this project can be found here: https://ipfs.io/ipfs/QmZwGeBFzva5yTcsRqRhjyh8xUxnZAjKAaxDv5eHokhqyW. 
 
 To use this action for another video, go to [Lit Block Explorer](https://explorer.litprotocol.com/create-action) and c/p it in the main form. Before uploading it to IPFS, you need to change the following variables:
 
