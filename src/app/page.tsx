@@ -164,7 +164,7 @@ const Home = () => {
         <div style={{ maxWidth: '600px', margin: 'auto', textAlign: 'center' }}>
           <div style={{ marginTop: '20px' }}>
             <strong>Step 1: Mint Access NFT</strong><br />
-            Go <a href="https://app.manifold.xyz/c/livepeergranttest" target="_blank" rel="noopener noreferrer" style={{ color: '#0000EE' }}>here</a> to mint the NFT needed to watch the video.
+            Go <a href="https://www.keypo.io/app/claim/0x9c871e5b7eee09535ecfe824d659fb5faf835d45" target="_blank" rel="noopener noreferrer" style={{ color: '#0000EE' }}>here</a> to mint the NFT needed to watch the video.
           </div>
           <div style={{ marginTop: '20px' }}>
             <strong>Step 2: Connect Wallet</strong>
