@@ -140,12 +140,14 @@ const Home = () => {
       });
 
       // The signed JWT is in res.response
-      if (typeof res.response === "string" && res.response.trim() !== "") {
-        setSignedJWT(res.response);
-        setErrorMessage("");
+      let jwtObj;
+      if (typeof res.response === "string") {
+        jwtObj = JSON.parse(res.response);
       } else {
-        setErrorMessage("ERROR: Access Denied");
+        jwtObj = res.response;
       }
+      setSignedJWT(jwtObj.Response);
+      setErrorMessage("");
     } catch (error) {
       console.error("Failed to check access:", error);
       setErrorMessage("ERROR: Access Denied");
