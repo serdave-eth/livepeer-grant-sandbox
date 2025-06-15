@@ -9,12 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@lit-protocol/auth-helpers": "^6.0.2",
-    "@lit-protocol/lit-node-client": "^6.0.2",
-    "@lit-protocol/types": "^6.0.2",
+    "@lit-protocol/auth-helpers": "^6.11.3",
+    "@lit-protocol/lit-node-client": "^6.11.3",
+    "@lit-protocol/types": "^6.11.3",
     "@livepeer/react": "^4.1.16",
     "@privy-io/react-auth": "^1.72.0",
     "@tanstack/react-query": "^5.35.1",
+    "@keypo/contracts": "0.0.13",
     "@wagmi/core": "^2.9.1",
     "connectkit": "^1.7.3",
     "ethers": "^5.7.2",
