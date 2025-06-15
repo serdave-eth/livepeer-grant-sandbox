@@ -389,4 +389,3 @@ export async function getLitAuthData(
     fileContractAddress,
   };
 }
-

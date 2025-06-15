@@ -96,7 +96,7 @@ const Home = () => {
 
       // Initialize Keypo
       const keypo = await init(address);
-
+      
       // Get Lit auth data for the file (replace "livepeer-jwt" with your file key if needed)
       const { sessionSigs, authSig, litNodeClient } = await getLitAuthData("livepeer-jwt", keypo, signer as any);
 
